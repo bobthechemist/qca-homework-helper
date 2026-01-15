@@ -1,7 +1,9 @@
+// src/pages/ProblemSet2.jsx
 import React, { useState, useEffect } from 'react';
-import seedrandom from 'seedrandom'; // <--- ADD THIS LINE
+import seedrandom from 'seedrandom';
+import Chem from '../components/Chem';
 import { genMolarity, genUnitConversion, genStoichiometry, genDilution } from '../logic/set2Generators';
- 
+
 export default function ProblemSet2() {
   const [seed, setSeed] = useState("practice");
   const [mode, setMode] = useState("mix"); // 'mix', 'molarity', 'dilution', etc.
@@ -9,16 +11,32 @@ export default function ProblemSet2() {
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
 
+  // --- HELPER: Renders mixed text and Chem components ---
+  const renderText = (parts) => {
+    if (!parts) return "";
+    // If it's just a simple string (legacy), return it
+    if (typeof parts === 'string') return parts;
+
+    return (
+      <span>
+        {parts.map((part, index) => (
+          part.isChem 
+            ? <Chem key={index}>{part.val}</Chem> 
+            : <span key={index}>{part}</span>
+        ))}
+      </span>
+    );
+  };
+
   // --- THE GENERATOR HUB ---
-    const createProblem = (currentSeed, currentMode) => {
+  const createProblem = (currentSeed, currentMode) => {
     // If "mix", pick a random generator
     const generators = [genMolarity, genUnitConversion, genStoichiometry, genDilution];
     
     let selectedGen;
     
     if (currentMode === "mix") {
-      // FIX: Use the seedrandom engine to pick the type reliably
-      // We create a temporary RNG just to decide which 'Type' of problem to show for this seed
+      // Use the seed to pick the type reliably
       const rng = seedrandom(currentSeed); 
       const typeIndex = Math.floor(rng() * generators.length);
       selectedGen = generators[typeIndex];
@@ -48,12 +66,13 @@ export default function ProblemSet2() {
     if (isNaN(studentVal)) { setFeedback("Please enter a valid number."); return; }
 
     const correct = problem.answer;
+    // 2% Tolerance
     const error = Math.abs((studentVal - correct) / correct) * 100;
 
-    if (error < 2) { // 2% tolerance
+    if (error < 2) {
       setFeedback("✅ Correct!");
     } else {
-      setFeedback(`❌ Incorrect. Answer: ${correct.toPrecision(4)} ${problem.unit}`);
+      setFeedback(`❌ Incorrect. Answer: ${correct} ${problem.unit}`);
     }
   };
 
@@ -95,7 +114,10 @@ export default function ProblemSet2() {
           <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
             {problem.type}
           </span>
-          <p style={{ fontSize: "1.2em", margin: "10px 0 20px 0" }}>{problem.text}</p>
+          
+          <p style={{ fontSize: "1.2em", margin: "10px 0 20px 0" }}>
+            {renderText(problem.parts || problem.text)}
+          </p>
           
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <input 
@@ -118,7 +140,11 @@ export default function ProblemSet2() {
           {feedback && (
             <div style={{ marginTop: "20px", padding: "10px", background: feedback.includes("Correct") ? "#d4edda" : "#f8d7da", borderRadius: "5px" }}>
               <strong>{feedback}</strong>
-              {!feedback.includes("Correct") && <div style={{ fontSize: "0.9em", marginTop: "5px" }}>Hint: {problem.hint}</div>}
+              {!feedback.includes("Correct") && (
+                <div style={{ fontSize: "0.9em", marginTop: "5px" }}>
+                  Hint: {renderText(problem.hintParts || problem.hint)}
+                </div>
+              )}
             </div>
           )}
         </div>

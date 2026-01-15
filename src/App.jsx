@@ -1,9 +1,15 @@
 // src/App.jsx
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { MathJaxContext } from 'better-react-mathjax'; // <--- IMPORT THIS
 import ProblemSet2 from './pages/ProblemSet2';
 
-// A simple Home Page Component
+// 1. Configure MathJax to understand Chemistry (\ce{})
+const config = {
+  loader: { load: ["[tex]/mhchem"] },
+  tex: { packages: { "[+]": ["mhchem"] } }
+};
+
 function Home() {
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
@@ -16,7 +22,6 @@ function Home() {
               ➡️ Problem Set 2: Solutions & Dilutions
             </Link>
           </li>
-          {/* Placeholders for future sets */}
           <li style={{ margin: "10px 0", color: "#ccc" }}>
             Problem Set 1: Accuracy & Precision (Coming Soon)
           </li>
@@ -28,11 +33,14 @@ function Home() {
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/set-2" element={<ProblemSet2 />} />
-      </Routes>
-    </Router>
+    // 2. Wrap the entire Router in the Context
+    <MathJaxContext config={config}>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/set-2" element={<ProblemSet2 />} />
+        </Routes>
+      </Router>
+    </MathJaxContext>
   );
 }
