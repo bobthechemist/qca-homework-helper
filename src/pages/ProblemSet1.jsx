@@ -1,47 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import seedrandom from 'seedrandom';
 import { Link } from 'react-router-dom';
-import Chem from '../components/Chem';
-import { genMolarity, genUnitConversion, genStoichiometry, genDilution, genSerialDilution } from '../logic/set2Generators';
+import Meniscus from '../components/Meniscus'; // The visual component
+import { genDataQuality, genGlasswareConcepts, genTolerance, genMeniscus } from '../logic/set1Generators';
 
-// --- CONSTANTS ---
+// --- CONFIGURATION ---
 const TOPICS = [
-  { id: 'molarity', name: 'Molarity', gen: genMolarity },
-  { id: 'units',    name: 'Unit Conversion', gen: genUnitConversion },
-  { id: 'stoich',   name: 'Stoichiometry', gen: genStoichiometry },
-  { id: 'dilution', name: 'Dilution', gen: genDilution },
-  { id: 'serial',   name: 'Serial Dilution', gen: genSerialDilution }
+  { id: 'data',      name: 'Data Quality (RSD/Error)', gen: genDataQuality },
+  { id: 'glass',     name: 'Glassware Concepts', gen: genGlasswareConcepts },
+  { id: 'tolerance', name: 'Tolerance Math', gen: genTolerance },
+  { id: 'meniscus',  name: 'Reading Meniscus', gen: genMeniscus }
 ];
 
-export default function ProblemSet2() {
+export default function ProblemSet1() {
   const [mode, setMode] = useState("practice"); // 'practice' or 'quiz'
   const [seed, setSeed] = useState("practice");
   
   // PRACTICE STATE
-  const [practiceTopic, setPracticeTopic] = useState("molarity");
+  const [practiceTopic, setPracticeTopic] = useState("data");
   const [practiceProblem, setPracticeProblem] = useState(null);
   const [practiceAnswer, setPracticeAnswer] = useState("");
   const [practiceFeedback, setPracticeFeedback] = useState("");
 
   // QUIZ STATE
   const [quizProblems, setQuizProblems] = useState([]);
-  const [quizAnswers, setQuizAnswers] = useState({}); // { 0: "0.5", 1: "1.2" }
-  const [quizResult, setQuizResult] = useState(null); // The final report card
-
-  // --- HELPER: Render text/chem ---
-  const renderText = (parts) => {
-    if (!parts) return "";
-    if (typeof parts === 'string') return parts;
-    return (
-      <span>
-        {parts.map((part, index) => (
-          part.isChem 
-            ? <Chem key={index}>{part.val}</Chem> 
-            : <span key={index}>{part}</span>
-        ))}
-      </span>
-    );
-  };
+  const [quizAnswers, setQuizAnswers] = useState({}); 
+  const [quizResult, setQuizResult] = useState(null); 
 
   // --- GENERATION LOGIC ---
 
@@ -49,7 +33,6 @@ export default function ProblemSet2() {
   useEffect(() => {
     if (mode === "practice" && seed) {
       const topic = TOPICS.find(t => t.id === practiceTopic);
-      // Create a unique seed for this specific instance
       const uniqueSeed = `${seed}_${practiceTopic}`; 
       setPracticeProblem(topic.gen(uniqueSeed));
       setPracticeAnswer("");
@@ -57,16 +40,14 @@ export default function ProblemSet2() {
     }
   }, [seed, practiceTopic, mode]);
 
-  // Generate 8 Quiz Problems
+  // Generate 8 Quiz Problems (2 per topic)
   useEffect(() => {
     if (mode === "quiz" && seed) {
       const problems = [];
       let pid = 0;
       
-      // Generate 2 of each type
       TOPICS.forEach(topic => {
         for (let i = 1; i <= 2; i++) {
-          // Deterministic seed: "masterseed_molarity_1"
           const subSeed = `${seed}_${topic.id}_${i}`;
           const prob = topic.gen(subSeed);
           problems.push({ 
@@ -85,38 +66,93 @@ export default function ProblemSet2() {
   // --- GRADING LOGIC ---
 
   const checkPractice = () => {
+    if (!practiceAnswer) return;
+
+    // 1. Handle Multiple Choice (Exact String Match)
+    if (practiceProblem.isMultipleChoice) {
+      if (practiceAnswer === practiceProblem.answer) {
+        setPracticeFeedback("✅ Correct!");
+      } else {
+        setPracticeFeedback(`❌ Incorrect. The answer is: ${practiceProblem.answer}`);
+      }
+      return;
+    }
+
+    // 2. Handle Numeric Answers
     const val = parseFloat(practiceAnswer);
-    if (isNaN(val)) return;
+    if (isNaN(val)) {
+      setPracticeFeedback("Please enter a valid number.");
+      return;
+    }
+
+    // 3. Sig Fig Trap (For Meniscus)
+    if (practiceProblem.checkSigFigs) {
+      const decimals = practiceAnswer.includes('.') ? practiceAnswer.split('.')[1].length : 0;
+      if (decimals !== practiceProblem.checkSigFigs) {
+        setPracticeFeedback(`⚠️ Sig Fig Error: You must read to exactly ${practiceProblem.checkSigFigs} decimal places.`);
+        return;
+      }
+    }
+
+    // 4. Standard Math Tolerance (2%)
     const correct = practiceProblem.answer;
     const error = Math.abs((val - correct) / correct) * 100;
     
-    if (error < 2) setPracticeFeedback("✅ Correct!");
-    else setPracticeFeedback(`❌ Incorrect. Answer: ${correct} ${practiceProblem.unit}`);
+    if (error < 2) {
+      setPracticeFeedback("✅ Correct!");
+    } else {
+      setPracticeFeedback(`❌ Incorrect. Answer: ${correct} ${practiceProblem.unit}`);
+    }
   };
 
   const submitQuiz = () => {
     let score = 0;
-    const total = 10;
-    const catStats = { molarity: 0, units: 0, stoich: 0, dilution: 0, serial: 0 };
+    const total = quizProblems.length;
+    // Track stats per category to determine "Proficient" status
+    const catStats = {}; 
+    TOPICS.forEach(t => catStats[t.id] = 0);
+
     const details = [];
 
     quizProblems.forEach(p => {
-      const studentVal = parseFloat(quizAnswers[p.id]);
-      const isCorrect = !isNaN(studentVal) && (Math.abs((studentVal - p.answer) / p.answer) * 100 < 2);
-      
+      let isCorrect = false;
+      const studentAns = quizAnswers[p.id];
+
+      if (p.isMultipleChoice) {
+        // Exact String Match
+        if (studentAns === p.answer) isCorrect = true;
+      } else {
+        // Numeric Check
+        const val = parseFloat(studentAns);
+        if (!isNaN(val)) {
+          // Sig Fig Check for Quiz? 
+          // Strictly speaking, we should enforce it, but let's be lenient on quiz or add a flag.
+          // Let's enforce it if the problem requires it.
+          let sigFigPass = true;
+          if (p.checkSigFigs) {
+            const dec = studentAns.includes('.') ? studentAns.split('.')[1].length : 0;
+            if (dec !== p.checkSigFigs) sigFigPass = false;
+          }
+
+          const error = Math.abs((val - p.answer) / p.answer) * 100;
+          if (error < 2 && sigFigPass) isCorrect = true;
+        }
+      }
+
       if (isCorrect) {
         score++;
         catStats[p.category]++;
       }
-      details.push({ ...p, isCorrect, studentVal });
+      details.push({ ...p, isCorrect, studentAns });
     });
 
     // DETERMINE LEVEL
     let level = "Deficient";
     const pct = score / total;
+    // Check if they got at least 1 right in every category
     const allCatsCovered = Object.values(catStats).every(count => count >= 1);
 
-    if (score === 8) {
+    if (score === total) {
       level = "Mastered";
     } else if (pct > 0.8 && allCatsCovered) {
       level = "Proficient";
@@ -127,19 +163,63 @@ export default function ProblemSet2() {
     }
 
     setQuizResult({ score, total, level, details });
-    // Scroll to top to see result
     window.scrollTo(0, 0);
   };
 
-  // --- RENDER ---
+  // --- RENDER HELPERS ---
+  
+  // Render the Input Area (Text box or Buttons)
+  const renderInputArea = (prob, currentVal, onChange, disabled, showFeedback) => {
+    if (prob.isMultipleChoice) {
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
+          {prob.options.map(opt => (
+            <button
+              key={opt}
+              disabled={disabled}
+              onClick={() => onChange(opt)}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                cursor: disabled ? "default" : "pointer",
+                // Highlight selected
+                background: currentVal === opt ? "#007bff" : "white",
+                color: currentVal === opt ? "white" : "black",
+                // Quiz Feedback coloring
+                opacity: disabled && currentVal !== opt ? 0.5 : 1
+              }}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
+        <input 
+          type="number" // Note: standard number input strips trailing zeros, might need type="text" for strict sig figs
+          placeholder="Answer" 
+          disabled={disabled}
+          value={currentVal || ""}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ padding: "8px", width: "150px" }}
+        />
+        <strong>{prob.unit}</strong>
+      </div>
+    );
+  };
+
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "#007bff" }}>
-        &larr; Back to Menu
-      </Link>
+        <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "#007bff" }}>
+            &larr; Back to Menu
+        </Link>
       {/* HEADER & CONTROLS */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2>🧪 Solutions & Dilutions</h2>
+        <h2>🎯 Accuracy, Precision & Glassware</h2>
         <div>
           <button 
             onClick={() => setMode("practice")}
@@ -190,12 +270,8 @@ export default function ProblemSet2() {
         </div>
         <p style={{ fontSize: "0.9em", color: "#666", marginTop: "10px" }}>
           {mode === "practice" 
-            ? "Practice specific concepts. Switch topics to focus your study." 
-            : "Generate a fixed set of 8 problems (2 of each type) to evaluate your level."}
-            
-        </p>
-        <p style={{ fontSize: "0.9em", color: "#666", marginTop: "10px" }}>
-          This tool does not handle significant figures. Report all of your answers to 3 sig figs.
+            ? "Master glassware concepts, statistics, and sig figs." 
+            : "Test your skills with a set of 8 problems (2 from each topic)."}
         </p>
       </div>
 
@@ -210,16 +286,13 @@ export default function ProblemSet2() {
             Score: {quizResult.score} / {quizResult.total} ({Math.round((quizResult.score/quizResult.total)*100)}%)
           </p>
           <p>
-            {quizResult.level === "Mastered" && "🏆 Perfect score! You have mastered this material."}
-            {quizResult.level === "Proficient" && "✅ Excellent work. You have demonstrated strong understanding across all topics."}
-            {quizResult.level === "Developing" && "⚠️ Good start, but you missed some key concepts. Check the feedback below."}
-            {quizResult.level === "Deficient" && "🛑 You are struggling with this material. Please return to Practice Mode."}
+            {quizResult.level === "Mastered" && "🏆 Perfect score!"}
+            {quizResult.level === "Proficient" && "✅ You are proficient in these concepts."}
+            {quizResult.level === "Developing" && "⚠️ You are developing, but missed some key concepts."}
+            {quizResult.level === "Deficient" && "🛑 You need more practice with the basics."}
           </p>
-          <button 
-            onClick={() => setQuizResult(null)} 
-            style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer" }}
-          >
-            Hide Results / Retake
+          <button onClick={() => setQuizResult(null)} style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer" }}>
+            Retake
           </button>
         </div>
       )}
@@ -231,18 +304,26 @@ export default function ProblemSet2() {
             <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
               {TOPICS.find(t => t.id === practiceTopic).name}
             </span>
-            <p style={{ fontSize: "1.2em", margin: "10px 0 20px 0" }}>{renderText(practiceProblem.parts)}</p>
             
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <input 
-                type="number" 
-                placeholder="Answer" 
-                value={practiceAnswer}
-                onChange={(e) => setPracticeAnswer(e.target.value)}
-                style={{ padding: "8px", width: "150px" }}
-              />
-              <strong>{practiceProblem.unit}</strong>
-            </div>
+            <p style={{ fontSize: "1.2em", margin: "10px 0 20px 0" }}>
+              {practiceProblem.parts.join("")}
+            </p>
+
+            {/* Visual Component (if Meniscus problem) */}
+            {practiceProblem.isVisual && (
+               <div style={{ margin: "20px 0" }}>
+                 <Meniscus {...practiceProblem.props} />
+               </div>
+            )}
+            
+            {/* Input Area */}
+            {renderInputArea(
+              practiceProblem, 
+              practiceAnswer, 
+              setPracticeAnswer, 
+              false, 
+              false
+            )}
             
             <button 
               onClick={checkPractice}
@@ -255,7 +336,7 @@ export default function ProblemSet2() {
               <div style={{ marginTop: "20px", padding: "10px", background: practiceFeedback.includes("Correct") ? "#d4edda" : "#f8d7da", borderRadius: "5px" }}>
                 <strong>{practiceFeedback}</strong>
                 {!practiceFeedback.includes("Correct") && (
-                  <div style={{ fontSize: "0.9em", marginTop: "5px" }}>Hint: {renderText(practiceProblem.hintParts)}</div>
+                  <div style={{ fontSize: "0.9em", marginTop: "5px" }}>Hint: {practiceProblem.hintParts.join("")}</div>
                 )}
               </div>
             )}
@@ -267,7 +348,6 @@ export default function ProblemSet2() {
       {mode === "quiz" && (
         <div>
           {quizProblems.map((p, idx) => {
-            // If we have results, show feedback inline
             const res = quizResult ? quizResult.details[idx] : null;
             const bg = res ? (res.isCorrect ? "#d4edda33" : "#f8d7da33") : "transparent";
 
@@ -276,27 +356,26 @@ export default function ProblemSet2() {
                 <div style={{ fontSize: "0.8em", color: "#888", marginBottom: "5px" }}>
                   Problem {idx + 1}: {TOPICS.find(t => t.id === p.category).name}
                 </div>
-                <div style={{ marginBottom: "15px" }}>{renderText(p.parts)}</div>
                 
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <input 
-                    type="number" 
-                    disabled={!!quizResult} // Lock input after submit
-                    value={quizAnswers[p.id] || ""}
-                    onChange={(e) => setQuizAnswers({ ...quizAnswers, [p.id]: e.target.value })}
-                    style={{ padding: "8px", width: "120px", borderColor: res && !res.isCorrect ? "red" : "#ccc" }}
-                  />
-                  <strong>{p.unit}</strong>
-                  {res && (
-                    <span style={{ marginLeft: "10px", color: res.isCorrect ? "green" : "red", fontWeight: "bold" }}>
-                      {res.isCorrect ? "✅" : `❌ (Ans: ${p.answer})`}
-                    </span>
-                  )}
-                </div>
-                {/* Show hint only if incorrect after grading */}
-                {res && !res.isCorrect && (
-                  <div style={{ marginTop: "10px", fontSize: "0.9em", color: "#666" }}>
-                    Hint: {renderText(p.hintParts)}
+                <div style={{ marginBottom: "15px" }}>{p.parts.join("")}</div>
+
+                {p.isVisual && (
+                  <div style={{ marginBottom: "15px" }}>
+                    <Meniscus {...p.props} />
+                  </div>
+                )}
+                
+                {renderInputArea(
+                  p, 
+                  quizAnswers[p.id], 
+                  (val) => !quizResult && setQuizAnswers({ ...quizAnswers, [p.id]: val }), 
+                  !!quizResult, 
+                  !!quizResult
+                )}
+
+                {res && (
+                  <div style={{ marginTop: "10px", fontWeight: "bold", color: res.isCorrect ? "green" : "red" }}>
+                    {res.isCorrect ? "✅ Correct" : `❌ Incorrect. Answer: ${p.answer} ${p.unit}`}
                   </div>
                 )}
               </div>
@@ -316,7 +395,6 @@ export default function ProblemSet2() {
           )}
         </div>
       )}
-
     </div>
   );
 }

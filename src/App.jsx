@@ -3,6 +3,7 @@ import React from 'react';
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { MathJaxContext } from 'better-react-mathjax'; 
 import ProblemSet2 from './pages/ProblemSet2';
+import ProblemSet1 from './pages/ProblemSet1';
 
 // 1. Configure MathJax to understand Chemistry (\ce{})
 const config = {
@@ -25,12 +26,14 @@ function Home() {
       <nav>
         <ul style={{ listStyle: "none", padding: 0 }}>
           <li style={{ margin: "10px 0" }}>
+            <Link to="/set-1" style={{ textDecoration: "none", fontSize: "1.2em", color: "#007bff" }}>
+              ➡️ Problem Set 1: Accuracy & Precision
+            </Link>
+          </li>
+          <li style={{ margin: "10px 0" }}>
             <Link to="/set-2" style={{ textDecoration: "none", fontSize: "1.2em", color: "#007bff" }}>
               ➡️ Problem Set 2: Solutions & Dilutions
             </Link>
-          </li>
-          <li style={{ margin: "10px 0", color: "#ccc" }}>
-            Problem Set 1: Accuracy & Precision (Coming Soon)
           </li>
         </ul>
       </nav>
@@ -45,6 +48,7 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/set-1" element={<ProblemSet1 />} />
           <Route path="/set-2" element={<ProblemSet2 />} />
         </Routes>
       </Router>
