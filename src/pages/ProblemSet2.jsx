@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import seedrandom from 'seedrandom'; // <--- ADD THIS LINE
 import { genMolarity, genUnitConversion, genStoichiometry, genDilution } from '../logic/set2Generators';
-
+ 
 export default function ProblemSet2() {
   const [seed, setSeed] = useState("practice");
   const [mode, setMode] = useState("mix"); // 'mix', 'molarity', 'dilution', etc.
