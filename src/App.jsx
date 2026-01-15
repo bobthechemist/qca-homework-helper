@@ -1,13 +1,20 @@
 // src/App.jsx
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { MathJaxContext } from 'better-react-mathjax'; // <--- IMPORT THIS
+import { MathJaxContext } from 'better-react-mathjax'; 
 import ProblemSet2 from './pages/ProblemSet2';
 
 // 1. Configure MathJax to understand Chemistry (\ce{})
 const config = {
   loader: { load: ["[tex]/mhchem"] },
-  tex: { packages: { "[+]": ["mhchem"] } }
+  tex: { packages: { "[+]": ["mhchem"] } },
+  chtml: {
+    matchFontHeight: true,
+    mtextInheritFont: true,
+    merrorInheritFont: true,
+    scale: 0.9,       // 1.1 = 110% size relative to surrounding text
+    minScale: 0.5       // Prevent it from getting too tiny
+  }
 };
 
 function Home() {
