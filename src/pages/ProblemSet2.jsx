@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import seedrandom from 'seedrandom';
 import Chem from '../components/Chem';
-import { genMolarity, genUnitConversion, genStoichiometry, genDilution } from '../logic/set2Generators';
+import { genMolarity, genUnitConversion, genStoichiometry, genDilution, genSerialDilution } from '../logic/set2Generators';
 
 // --- CONSTANTS ---
 const TOPICS = [
   { id: 'molarity', name: 'Molarity', gen: genMolarity },
   { id: 'units',    name: 'Unit Conversion', gen: genUnitConversion },
   { id: 'stoich',   name: 'Stoichiometry', gen: genStoichiometry },
-  { id: 'dilution', name: 'Dilution', gen: genDilution }
+  { id: 'dilution', name: 'Dilution', gen: genDilution },
+  { id: 'serial',   name: 'Serial Dilution', gen: genSerialDilution }
 ];
 
 export default function ProblemSet2() {
@@ -94,8 +95,8 @@ export default function ProblemSet2() {
 
   const submitQuiz = () => {
     let score = 0;
-    const total = 8;
-    const catStats = { molarity: 0, units: 0, stoich: 0, dilution: 0 };
+    const total = 10;
+    const catStats = { molarity: 0, units: 0, stoich: 0, dilution: 0, serial: 0 };
     const details = [];
 
     quizProblems.forEach(p => {
@@ -188,6 +189,10 @@ export default function ProblemSet2() {
           {mode === "practice" 
             ? "Practice specific concepts. Switch topics to focus your study." 
             : "Generate a fixed set of 8 problems (2 of each type) to evaluate your level."}
+            
+        </p>
+        <p style={{ fontSize: "0.9em", color: "#666", marginTop: "10px" }}>
+          This tool does not handle significant figures. Report all of your answers to 3 sig figs.
         </p>
       </div>
 

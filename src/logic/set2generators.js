@@ -3,7 +3,6 @@ import seedrandom from 'seedrandom';
 import { COMPOUNDS } from '../data/chemicals';
 
 // --- HELPERS ---
-
 const getRandom = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 const roundTo = (num, places) => parseFloat(num.toFixed(places));
 
@@ -22,12 +21,11 @@ export const genMolarity = (seed) => {
 
   return {
     type: "Molarity Calculation",
-    // NOTE: 'parts' array triggers the MathJax rendering
     parts: [
       "Dissolve ",
       `${mass.toFixed(3)} g`,
       " of ",
-      { isChem: true, val: cmp.formula }, // <--- Formula used here
+      { isChem: true, val: cmp.formula },
       ` (${cmp.name}) in a `,
       `${volL * 1000} mL`,
       " volumetric flask. Calculate the Molarity."
@@ -42,30 +40,62 @@ export const genMolarity = (seed) => {
   };
 };
 
+// UPDATED: Bi-directional and Varied Units
 export const genUnitConversion = (seed) => {
   const rng = seedrandom(seed);
   const cmp = getRandom(COMPOUNDS, rng);
   
-  const rawM = (rng() * 0.1) + 0.001; 
-  const startM = parseFloat(rawM.toPrecision(3));
+  // Decide Direction: 0 = M -> ppm, 1 = ppm -> M
+  const direction = Math.floor(rng() * 2);
 
-  const ansPPM = startM * cmp.mw * 1000;
+  // Randomize Unit Labels
+  const mLabel = getRandom(["M", "mol/L", "mmol/mL"], rng);
+  const ppmLabel = getRandom(["ppm", "mg/L", "ug/mL"], rng);
 
-  return {
-    type: "Unit Conversion",
-    parts: [
-      "A sample of ",
-      { isChem: true, val: cmp.formula },
-      " has a concentration of ",
-      `${startM} M`,
-      ". Calculate this concentration in ppm (mg/L)."
-    ],
-    answer: ansPPM,
-    unit: "ppm",
-    hintParts: [
-      "ppm is mg/L. Convert M (mol/L) to g/L using MW."
-    ]
-  };
+  if (direction === 0) {
+    // M -> ppm
+    const rawM = (rng() * 0.1) + 0.001; 
+    const startM = parseFloat(rawM.toPrecision(3));
+    const ansPPM = startM * cmp.mw * 1000;
+
+    return {
+      type: "Unit Conversion",
+      parts: [
+        "A sample of ",
+        { isChem: true, val: cmp.formula },
+        " has a concentration of ",
+        `${startM} ${mLabel}`,
+        `. Calculate this concentration in ${ppmLabel}.`
+      ],
+      answer: ansPPM,
+      unit: ppmLabel,
+      hintParts: [
+        `Convert ${mLabel} to g/L using the molar mass (${cmp.mw} g/mol), then multiply by 1000 to get mg/L (ppm).`
+      ]
+    };
+  } else {
+    // ppm -> M
+    const rawPPM = (rng() * 500) + 10; // 10 to 500 ppm
+    const startPPM = parseFloat(rawPPM.toPrecision(3));
+    // mg/L / 1000 = g/L.  g/L / MW = mol/L
+    const ansM = (startPPM / 1000) / cmp.mw;
+
+    return {
+      type: "Unit Conversion",
+      parts: [
+        "A solution of ",
+        { isChem: true, val: cmp.formula },
+        " contains ",
+        `${startPPM} ${ppmLabel}`,
+        `. Calculate the Molarity (${mLabel}).`
+      ],
+      answer: ansM,
+      unit: mLabel,
+      hintParts: [
+        `Convert ${ppmLabel} (mg/L) to g/L by dividing by 1000. Then divide by the molar mass (${cmp.mw} g/mol).`
+      ]
+    };
+  }
 };
 
 export const genStoichiometry = (seed) => {
@@ -87,15 +117,15 @@ export const genStoichiometry = (seed) => {
       " in a ",
       `${conc.toFixed(3)} M`,
       " solution of ",
-      { isChem: true, val: cmp.formula }, // <--- New code uses Formula, not Name
+      { isChem: true, val: cmp.formula },
       "?"
     ],
     answer: conc * count,
     unit: "M",
     hintParts: [
-      "Look at the formula ",
+      "For every 1 molecule of ",
       { isChem: true, val: cmp.formula },
-      ". For every 1 molecule, there are ",
+      ", there are ",
       `${count}`,
       " ions of ",
       { isChem: true, val: ionName },
@@ -106,7 +136,7 @@ export const genStoichiometry = (seed) => {
 
 export const genDilution = (seed) => {
   const rng = seedrandom(seed);
-  const cmp = getRandom(COMPOUNDS, rng); // Added cmp logic for flavor
+  const cmp = getRandom(COMPOUNDS, rng);
   
   const v1 = getRandom([1, 2, 5, 10, 20, 25], rng);
   const v2 = getRandom([50, 100, 250, 500], rng);
@@ -137,4 +167,78 @@ export const genDilution = (seed) => {
       "Use C1V1 = C2V2."
     ]
   };
+};
+
+export const genSerialDilution = (seed) => {
+  const rng = seedrandom(seed);
+  
+  // --- Step 1 Generation ---
+  const p1 = getRandom([1, 2, 3, 4, 5, 10, 20, 25], rng);
+  const f1 = getRandom([50, 100, 250, 500], rng);
+
+  // --- Step 2 Generation ---
+  // Constraint: The aliquot for Step 2 (p2) must be less than the total vol of Step 1 (f1).
+  // We filter the standard pipet sizes to ensure this physical reality.
+  const possibleP2 = [1, 2, 3, 4, 5, 10, 20, 25, 50].filter(vol => vol < f1);
+  
+  // Fallback: If f1 is tiny (rare), just pick 1mL, but our inputs make this safe.
+  const p2 = getRandom(possibleP2.length > 0 ? possibleP2 : [1], rng);
+  const f2 = getRandom([50, 100, 250, 500, 1000], rng);
+
+  // --- Calculation ---
+  const df1 = f1 / p1;
+  const df2 = f2 / p2;
+  const totalDF = df1 * df2;
+
+  // Decide Problem Type: 0 = Calculate Total DF, 1 = Back Calculate Stock
+  const type = Math.floor(rng() * 2);
+
+  if (type === 0) {
+    return {
+      type: "Serial Dilution",
+      parts: [
+        "You perform a two-step serial dilution. Step 1: Transfer ",
+        `${p1} mL`,
+        " of stock solution into a ",
+        `${f1} mL`,
+        " volumetric flask and dilute to the mark. Step 2: Transfer ",
+        `${p2} mL`,
+        " from the first flask into a ",
+        `${f2} mL`,
+        " flask and dilute to the mark. What is the Total Dilution Factor?"
+      ],
+      answer: totalDF,
+      unit: "", // Dimensionless
+      hintParts: [
+        "Calculate the DF for each step (Flask / Pipet). The Total DF is the product of the individual steps."
+      ]
+    };
+  } else {
+    // Back Calculation
+    // Pick a nice "Final" concentration (e.g. 5 ppm)
+    const finalConc = getRandom([0.5, 1, 2, 5, 10], rng);
+    const stockConc = finalConc * totalDF;
+
+    return {
+      type: "Serial Dilution",
+      parts: [
+        "You perform a two-step serial dilution (Step 1: ",
+        `${p1} mL`,
+        " into ",
+        `${f1} mL`,
+        "; Step 2: ",
+        `${p2} mL`,
+        " into ",
+        `${f2} mL`,
+        `). The final concentration is determined to be `,
+        `${finalConc} ppm`,
+        ". What was the concentration of the original stock solution?"
+      ],
+      answer: stockConc,
+      unit: "ppm",
+      hintParts: [
+        `First calculate the Total DF. Then use: Stock = Final x Total DF.`
+      ]
+    };
+  }
 };
