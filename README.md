@@ -59,7 +59,7 @@ src/
 ### Installation
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/YOUR_USERNAME/qca-homework-helper.git
+    git clone https://github.com/bobthechemist/qca-homework-helper.git
     ```
 2.  Install dependencies:
     ```bash
@@ -83,6 +83,18 @@ To deploy a new version to the live site:
 npm run deploy
 ```
 *Note: This runs the build script and pushes the `dist` folder to the `gh-pages` branch.*
+
+## ⚠️ Caveat
+
+This project is authored with extensive use of vibe programming (with Gemini 3 Pro). The author is still in the process of investigating hallucinations. Should you find them, please raise an issue. 
+
+## 🙋‍♂️ About the Author
+
+I'm BoB (thechemist) and I currently teach Analytical Chemistry at [SUNY Brockport](https://www.brockport.edu). In the spring, I each CHM 313: Quantitative Chemical Analysis, which is the first (and only) semester of analytical chemistry for non-majors (environmental science and medical technology) at our institution. In the fall, I teach my own flavor of instrumental methods and a graduate level class on statistics and data analysis.
+
+I started this project because my students keep asking for more guided homework and I am rather unsatisfied with the on-line tools that are commercially available. I also wanted to learn how to build a serverless homework tool (in theory, a student could fork this repository and run it locally on her own computer with the exact same functionality).
+
+When I'm not teaching chemistry, I'm running a makerspace. A few years back, I started [It Begins in Brockport](www.ibib.us) and it is a small but very active group of creators who enjoy crafting, designing, and turning big pieces of wood into little pieces of wood with lasers and CNC mills. 
 
 ## 📄 License
 
