@@ -126,8 +126,6 @@ export default function ProblemSet1() {
         const val = parseFloat(studentAns);
         if (!isNaN(val)) {
           // Sig Fig Check for Quiz? 
-          // Strictly speaking, we should enforce it, but let's be lenient on quiz or add a flag.
-          // Let's enforce it if the problem requires it.
           let sigFigPass = true;
           if (p.checkSigFigs) {
             const dec = studentAns.includes('.') ? studentAns.split('.')[1].length : 0;
@@ -180,12 +178,13 @@ export default function ProblemSet1() {
               onClick={() => onChange(opt)}
               style={{
                 padding: "8px 12px",
-                border: "1px solid #ccc",
+                border: `1px solid ${currentVal === opt ? "var(--accent-primary)" : "var(--accent-secondary)"}`,
                 borderRadius: "4px",
                 cursor: disabled ? "default" : "pointer",
                 // Highlight selected
-                background: currentVal === opt ? "#007bff" : "white",
-                color: currentVal === opt ? "white" : "black",
+                background: currentVal === opt ? "var(--accent-secondary)" : "var(--bg-primary)",
+                color: "var(--text-primary)",
+                fontFamily: "inherit",
                 // Quiz Feedback coloring
                 opacity: disabled && currentVal !== opt ? 0.5 : 1
               }}
@@ -200,7 +199,7 @@ export default function ProblemSet1() {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
         <input 
-          type="number" // Note: standard number input strips trailing zeros, might need type="text" for strict sig figs
+          type="number" 
           placeholder="Answer" 
           disabled={disabled}
           value={currentVal || ""}
@@ -212,11 +211,23 @@ export default function ProblemSet1() {
     );
   };
 
+  // Helper to determine styles for result cards
+  const getResultStyles = (level) => {
+    if (level === "Mastered" || level === "Proficient") {
+      return { bg: "rgba(0, 255, 136, 0.1)", border: "#00ff88" };
+    } else if (level === "Developing") {
+      return { bg: "rgba(255, 213, 0, 0.1)", border: "#ffd500" };
+    } else {
+      return { bg: "rgba(255, 77, 77, 0.1)", border: "#ff4d4d" };
+    }
+  };
+
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-        <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "#007bff" }}>
+        <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "var(--accent-primary)" }}>
             &larr; Back to Menu
         </Link>
+      
       {/* HEADER & CONTROLS */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2>🎯 Accuracy, Precision & Glassware</h2>
@@ -224,9 +235,9 @@ export default function ProblemSet1() {
           <button 
             onClick={() => setMode("practice")}
             style={{ 
-              padding: "8px 15px", marginRight: "5px", border: "none", borderRadius: "4px", cursor: "pointer",
-              background: mode === "practice" ? "#007bff" : "#e0e0e0", 
-              color: mode === "practice" ? "white" : "black" 
+              padding: "8px 15px", marginRight: "5px", border: "1px solid var(--accent-primary)", borderRadius: "4px", cursor: "pointer",
+              background: mode === "practice" ? "var(--accent-primary)" : "transparent", 
+              color: mode === "practice" ? "#0a0e27" : "var(--accent-primary)", fontWeight: "bold"
             }}
           >
             Practice
@@ -234,9 +245,9 @@ export default function ProblemSet1() {
           <button 
             onClick={() => setMode("quiz")}
             style={{ 
-              padding: "8px 15px", border: "none", borderRadius: "4px", cursor: "pointer",
-              background: mode === "quiz" ? "#007bff" : "#e0e0e0", 
-              color: mode === "quiz" ? "white" : "black" 
+              padding: "8px 15px", border: "1px solid var(--accent-primary)", borderRadius: "4px", cursor: "pointer",
+              background: mode === "quiz" ? "var(--accent-primary)" : "transparent", 
+              color: mode === "quiz" ? "#0a0e27" : "var(--accent-primary)", fontWeight: "bold"
             }}
           >
             Quiz Mode
@@ -244,7 +255,7 @@ export default function ProblemSet1() {
         </div>
       </div>
 
-      <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
+      <div style={{ background: "var(--bg-secondary)", border: "1px solid rgba(0,217,255,0.1)", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
         <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
           <div>
             <label><strong>Seed: </strong></label>
@@ -254,7 +265,7 @@ export default function ProblemSet1() {
               onChange={(e) => setSeed(e.target.value)}
               style={{ padding: "5px", width: "100px" }}
             />
-            <button onClick={() => setSeed(Math.floor(Math.random() * 10000).toString())} style={{ marginLeft: "10px" }}>
+            <button onClick={() => setSeed(Math.floor(Math.random() * 10000).toString())} style={{ marginLeft: "10px", background: "var(--accent-secondary)", border: "none", color: "white", padding: "6px 12px", borderRadius: "4px" }}>
               Randomize
             </button>
           </div>
@@ -268,7 +279,7 @@ export default function ProblemSet1() {
             </div>
           )}
         </div>
-        <p style={{ fontSize: "0.9em", color: "#666", marginTop: "10px" }}>
+        <p style={{ fontSize: "0.9em", color: "var(--text-secondary)", marginTop: "10px" }}>
           {mode === "practice" 
             ? "Master glassware concepts, statistics, and sig figs." 
             : "Test your skills with a set of 8 problems (2 from each topic)."}
@@ -278,10 +289,11 @@ export default function ProblemSet1() {
       {/* --- QUIZ RESULT CARD --- */}
       {mode === "quiz" && quizResult && (
         <div style={{ 
-          background: quizResult.level === "Mastered" ? "#d4edda" : quizResult.level === "Deficient" ? "#f8d7da" : "#fff3cd", 
-          padding: "20px", borderRadius: "8px", marginBottom: "30px", border: "1px solid #ddd"
+          background: getResultStyles(quizResult.level).bg,
+          border: `1px solid ${getResultStyles(quizResult.level).border}`,
+          padding: "20px", borderRadius: "8px", marginBottom: "30px"
         }}>
-          <h2 style={{ marginTop: 0 }}>Evaluation: {quizResult.level}</h2>
+          <h2 style={{ marginTop: 0, color: getResultStyles(quizResult.level).border }}>Evaluation: {quizResult.level}</h2>
           <p style={{ fontSize: "1.2em" }}>
             Score: {quizResult.score} / {quizResult.total} ({Math.round((quizResult.score/quizResult.total)*100)}%)
           </p>
@@ -291,7 +303,7 @@ export default function ProblemSet1() {
             {quizResult.level === "Developing" && "⚠️ You are developing, but missed some key concepts."}
             {quizResult.level === "Deficient" && "🛑 You need more practice with the basics."}
           </p>
-          <button onClick={() => setQuizResult(null)} style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer" }}>
+          <button onClick={() => setQuizResult(null)} style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer", background: "var(--bg-secondary)", border: "1px solid var(--text-primary)", color: "var(--text-primary)" }}>
             Retake
           </button>
         </div>
@@ -300,8 +312,8 @@ export default function ProblemSet1() {
       {/* --- PRACTICE MODE VIEW --- */}
       {mode === "practice" && practiceProblem && (
         <div>
-          <div style={{ marginBottom: "20px" }}>
-            <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
+          <div className="problem-card" style={{ marginBottom: "20px" }}>
+            <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "var(--accent-secondary)", letterSpacing: "1px" }}>
               {TOPICS.find(t => t.id === practiceTopic).name}
             </span>
             
@@ -327,16 +339,26 @@ export default function ProblemSet1() {
             
             <button 
               onClick={checkPractice}
-              style={{ marginTop: "15px", padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+              style={{ marginTop: "15px", padding: "10px 20px", background: "var(--accent-primary)", color: "#0a0e27", fontWeight: "bold", border: "none", borderRadius: "4px", cursor: "pointer" }}
             >
               Check Answer
             </button>
 
             {practiceFeedback && (
-              <div style={{ marginTop: "20px", padding: "10px", background: practiceFeedback.includes("Correct") ? "#d4edda" : "#f8d7da", borderRadius: "5px" }}>
-                <strong>{practiceFeedback}</strong>
+               <div style={{ 
+                marginTop: "20px", 
+                padding: "15px", 
+                borderRadius: "8px", 
+                background: practiceFeedback.includes("Correct") ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 77, 77, 0.1)",
+                border: `1px solid ${practiceFeedback.includes("Correct") ? "#00ff88" : "#ff4d4d"}`
+              }}>
+                <strong style={{ color: practiceFeedback.includes("Correct") ? "#00ff88" : "#ff4d4d", fontSize: "1.1em" }}>
+                  {practiceFeedback}
+                </strong>
                 {!practiceFeedback.includes("Correct") && (
-                  <div style={{ fontSize: "0.9em", marginTop: "5px" }}>Hint: {practiceProblem.hintParts.join("")}</div>
+                  <div style={{ fontSize: "0.9em", marginTop: "10px", color: "var(--text-secondary)" }}>
+                    Hint: {practiceProblem.hintParts.join("")}
+                  </div>
                 )}
               </div>
             )}
@@ -349,11 +371,23 @@ export default function ProblemSet1() {
         <div>
           {quizProblems.map((p, idx) => {
             const res = quizResult ? quizResult.details[idx] : null;
-            const bg = res ? (res.isCorrect ? "#d4edda33" : "#f8d7da33") : "transparent";
+            // Define background colors for quiz items
+            let bg = "var(--bg-secondary)";
+            let border = "rgba(0,217,255,0.1)";
+            
+            if (res) {
+                if (res.isCorrect) {
+                    bg = "rgba(0, 255, 136, 0.05)";
+                    border = "#00ff88";
+                } else {
+                    bg = "rgba(255, 77, 77, 0.05)";
+                    border = "#ff4d4d";
+                }
+            }
 
             return (
-              <div key={p.id} style={{ marginBottom: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px", background: bg }}>
-                <div style={{ fontSize: "0.8em", color: "#888", marginBottom: "5px" }}>
+              <div key={p.id} style={{ marginBottom: "30px", padding: "20px", border: `1px solid ${border}`, borderRadius: "12px", background: bg, boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
+                <div style={{ fontSize: "0.8em", color: "var(--accent-secondary)", marginBottom: "5px" }}>
                   Problem {idx + 1}: {TOPICS.find(t => t.id === p.category).name}
                 </div>
                 
@@ -374,7 +408,7 @@ export default function ProblemSet1() {
                 )}
 
                 {res && (
-                  <div style={{ marginTop: "10px", fontWeight: "bold", color: res.isCorrect ? "green" : "red" }}>
+                  <div style={{ marginTop: "10px", fontWeight: "bold", color: res.isCorrect ? "#00ff88" : "#ff4d4d" }}>
                     {res.isCorrect ? "✅ Correct" : `❌ Incorrect. Answer: ${p.answer} ${p.unit}`}
                   </div>
                 )}
@@ -386,8 +420,9 @@ export default function ProblemSet1() {
              <button 
              onClick={submitQuiz}
              style={{ 
-               width: "100%", padding: "15px", background: "#28a745", color: "white", 
-               fontSize: "1.1em", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "20px" 
+               width: "100%", padding: "15px", background: "#00ff88", color: "#0a0e27", fontWeight: "bold", 
+               fontSize: "1.1em", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "20px",
+               boxShadow: "0 0 15px rgba(0, 255, 136, 0.4)"
              }}
            >
              Submit Quiz for Evaluation

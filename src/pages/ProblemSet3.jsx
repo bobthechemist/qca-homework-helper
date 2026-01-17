@@ -52,11 +52,11 @@ export default function ProblemSet3() {
               onClick={() => onChange(opt)}
               style={{
                 padding: "8px 12px",
-                border: "1px solid #ccc",
+                border: `1px solid ${currentVal === opt ? "var(--accent-primary)" : "var(--accent-secondary)"}`,
                 borderRadius: "4px",
                 cursor: disabled ? "default" : "pointer",
-                background: currentVal === opt ? "#007bff" : "white",
-                color: currentVal === opt ? "white" : "black",
+                background: currentVal === opt ? "var(--accent-secondary)" : "var(--bg-primary)",
+                color: "var(--text-primary)",
                 opacity: disabled && currentVal !== opt ? 0.5 : 1
               }}
             >
@@ -79,6 +79,17 @@ export default function ProblemSet3() {
         <strong>{prob.unit}</strong>
       </div>
     );
+  };
+
+  // Helper to determine styles for result cards
+  const getResultStyles = (level) => {
+    if (level === "Mastered" || level === "Proficient") {
+      return { bg: "rgba(0, 255, 136, 0.1)", border: "#00ff88" };
+    } else if (level === "Developing") {
+      return { bg: "rgba(255, 213, 0, 0.1)", border: "#ffd500" };
+    } else {
+      return { bg: "rgba(255, 77, 77, 0.1)", border: "#ff4d4d" };
+    }
   };
 
   // --- GENERATION LOGIC ---
@@ -168,22 +179,40 @@ export default function ProblemSet3() {
 
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "#007bff" }}>&larr; Back to Menu</Link>
+      <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "var(--accent-primary)" }}>&larr; Back to Menu</Link>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ margin: 0 }}>⚗️ Sample Prep & Analysis</h2>
         <div>
-          <button onClick={() => setMode("practice")} style={{ padding: "8px 15px", marginRight: "5px", background: mode === "practice" ? "#007bff" : "#e0e0e0", color: mode === "practice" ? "white" : "black", border: "none", borderRadius: "4px", cursor: "pointer" }}>Practice</button>
-          <button onClick={() => setMode("quiz")} style={{ padding: "8px 15px", background: mode === "quiz" ? "#007bff" : "#e0e0e0", color: mode === "quiz" ? "white" : "black", border: "none", borderRadius: "4px", cursor: "pointer" }}>Quiz Mode</button>
+          <button 
+            onClick={() => setMode("practice")} 
+            style={{ 
+              padding: "8px 15px", marginRight: "5px", border: "1px solid var(--accent-primary)", borderRadius: "4px", cursor: "pointer",
+              background: mode === "practice" ? "var(--accent-primary)" : "transparent", 
+              color: mode === "practice" ? "#0a0e27" : "var(--accent-primary)", fontWeight: "bold"
+            }}
+          >
+            Practice
+          </button>
+          <button 
+            onClick={() => setMode("quiz")} 
+            style={{ 
+              padding: "8px 15px", border: "1px solid var(--accent-primary)", borderRadius: "4px", cursor: "pointer",
+              background: mode === "quiz" ? "var(--accent-primary)" : "transparent", 
+              color: mode === "quiz" ? "#0a0e27" : "var(--accent-primary)", fontWeight: "bold"
+            }}
+          >
+            Quiz Mode
+          </button>
         </div>
       </div>
 
-      <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
+      <div style={{ background: "var(--bg-secondary)", border: "1px solid rgba(0,217,255,0.1)", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
         <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
           <div>
             <label><strong>Seed: </strong></label>
             <input type="text" value={seed} onChange={(e) => setSeed(e.target.value)} style={{ padding: "5px", width: "100px" }} />
-            <button onClick={() => setSeed(Math.floor(Math.random() * 10000).toString())} style={{ marginLeft: "10px" }}>Randomize</button>
+            <button onClick={() => setSeed(Math.floor(Math.random() * 10000).toString())} style={{ marginLeft: "10px", background: "var(--accent-secondary)", border: "none", color: "white", padding: "6px 12px", borderRadius: "4px" }}>Randomize</button>
           </div>
           {mode === "practice" && (
             <div>
@@ -197,24 +226,41 @@ export default function ProblemSet3() {
       </div>
 
       {mode === "quiz" && quizResult && (
-        <div style={{ background: quizResult.level === "Mastered" ? "#d4edda" : quizResult.level === "Deficient" ? "#f8d7da" : "#fff3cd", padding: "20px", borderRadius: "8px", marginBottom: "30px", border: "1px solid #ddd" }}>
-          <h2 style={{ marginTop: 0 }}>Evaluation: {quizResult.level}</h2>
+        <div style={{ 
+          background: getResultStyles(quizResult.level).bg,
+          border: `1px solid ${getResultStyles(quizResult.level).border}`,
+          padding: "20px", borderRadius: "8px", marginBottom: "30px" 
+        }}>
+          <h2 style={{ marginTop: 0, color: getResultStyles(quizResult.level).border }}>Evaluation: {quizResult.level}</h2>
           <p style={{ fontSize: "1.2em" }}>Score: {quizResult.score} / {quizResult.total} ({Math.round((quizResult.score/quizResult.total)*100)}%)</p>
-          <button onClick={() => setQuizResult(null)} style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer" }}>Retake</button>
+          <button onClick={() => setQuizResult(null)} style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer", background: "var(--bg-secondary)", border: "1px solid var(--text-primary)", color: "var(--text-primary)" }}>Retake</button>
         </div>
       )}
 
       {mode === "practice" && practiceProblem && (
         <div>
-          <div style={{ marginBottom: "20px" }}>
-            <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>{TOPICS.find(t => t.id === practiceTopic).name}</span>
+          <div className="problem-card" style={{ marginBottom: "20px" }}>
+            <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "var(--accent-secondary)", letterSpacing: "1px" }}>{TOPICS.find(t => t.id === practiceTopic).name}</span>
             <p style={{ fontSize: "1.2em", margin: "10px 0 20px 0" }}>{renderText(practiceProblem.parts)}</p>
             {renderInputArea(practiceProblem, practiceAnswer, setPracticeAnswer, false)}
-            <button onClick={checkPractice} style={{ marginTop: "15px", padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>Check Answer</button>
+            
+            <button 
+              onClick={checkPractice} 
+              style={{ marginTop: "15px", padding: "10px 20px", background: "var(--accent-primary)", color: "#0a0e27", fontWeight: "bold", border: "none", borderRadius: "4px", cursor: "pointer" }}
+            >
+              Check Answer
+            </button>
+            
             {practiceFeedback && (
-              <div style={{ marginTop: "20px", padding: "10px", background: practiceFeedback.includes("Correct") ? "#d4edda" : "#f8d7da", borderRadius: "5px" }}>
-                <strong>{practiceFeedback}</strong>
-                {!practiceFeedback.includes("Correct") && <div style={{ fontSize: "0.9em", marginTop: "5px" }}>Hint: {renderText(practiceProblem.hintParts)}</div>}
+              <div style={{ 
+                marginTop: "20px", 
+                padding: "15px", 
+                borderRadius: "8px", 
+                background: practiceFeedback.includes("Correct") ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 77, 77, 0.1)",
+                border: `1px solid ${practiceFeedback.includes("Correct") ? "#00ff88" : "#ff4d4d"}`
+              }}>
+                <strong style={{ color: practiceFeedback.includes("Correct") ? "#00ff88" : "#ff4d4d", fontSize: "1.1em" }}>{practiceFeedback}</strong>
+                {!practiceFeedback.includes("Correct") && <div style={{ fontSize: "0.9em", marginTop: "10px", color: "var(--text-secondary)" }}>Hint: {renderText(practiceProblem.hintParts)}</div>}
               </div>
             )}
           </div>
@@ -225,18 +271,41 @@ export default function ProblemSet3() {
         <div>
           {quizProblems.map((p, idx) => {
             const res = quizResult ? quizResult.details[idx] : null;
-            const bg = res ? (res.isCorrect ? "#d4edda33" : "#f8d7da33") : "transparent";
+            let bg = "var(--bg-secondary)";
+            let border = "rgba(0,217,255,0.1)";
+            
+            if (res) {
+                if (res.isCorrect) {
+                    bg = "rgba(0, 255, 136, 0.05)";
+                    border = "#00ff88";
+                } else {
+                    bg = "rgba(255, 77, 77, 0.05)";
+                    border = "#ff4d4d";
+                }
+            }
+
             return (
-              <div key={p.id} style={{ marginBottom: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px", background: bg }}>
-                <div style={{ fontSize: "0.8em", color: "#888", marginBottom: "5px" }}>Problem {idx + 1}: {TOPICS.find(t => t.id === p.category).name}</div>
+              <div key={p.id} style={{ marginBottom: "30px", padding: "20px", border: `1px solid ${border}`, borderRadius: "12px", background: bg }}>
+                <div style={{ fontSize: "0.8em", color: "var(--accent-secondary)", marginBottom: "5px" }}>Problem {idx + 1}: {TOPICS.find(t => t.id === p.category).name}</div>
                 <div style={{ marginBottom: "15px" }}>{renderText(p.parts)}</div>
                 {renderInputArea(p, quizAnswers[p.id], (val) => !quizResult && setQuizAnswers({ ...quizAnswers, [p.id]: val }), !!quizResult)}
-                {res && <div style={{ marginTop: "10px", fontWeight: "bold", color: res.isCorrect ? "green" : "red" }}>{res.isCorrect ? "✅ Correct" : `❌ Incorrect. Answer: ${p.answer} ${p.unit}`}</div>}
-                {res && !res.isCorrect && <div style={{ marginTop: "5px", fontSize: "0.9em", color: "#666" }}>Hint: {renderText(p.hintParts)}</div>}
+                {res && <div style={{ marginTop: "10px", fontWeight: "bold", color: res.isCorrect ? "#00ff88" : "#ff4d4d" }}>{res.isCorrect ? "✅ Correct" : `❌ Incorrect. Answer: ${p.answer} ${p.unit}`}</div>}
+                {res && !res.isCorrect && <div style={{ marginTop: "5px", fontSize: "0.9em", color: "var(--text-secondary)" }}>Hint: {renderText(p.hintParts)}</div>}
               </div>
             );
           })}
-          {!quizResult && <button onClick={submitQuiz} style={{ width: "100%", padding: "15px", background: "#28a745", color: "white", fontSize: "1.1em", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "20px" }}>Submit Quiz for Evaluation</button>}
+          {!quizResult && (
+            <button 
+              onClick={submitQuiz} 
+              style={{ 
+                width: "100%", padding: "15px", background: "#00ff88", color: "#0a0e27", fontWeight: "bold", 
+                fontSize: "1.1em", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "20px",
+                boxShadow: "0 0 15px rgba(0, 255, 136, 0.4)"
+              }}
+            >
+              Submit Quiz for Evaluation
+            </button>
+          )}
         </div>
       )}
     </div>

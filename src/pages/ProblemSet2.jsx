@@ -57,7 +57,7 @@ export default function ProblemSet2() {
     }
   }, [seed, practiceTopic, mode]);
 
-  // Generate 8 Quiz Problems
+  // Generate 10 Quiz Problems
   useEffect(() => {
     if (mode === "quiz" && seed) {
       const problems = [];
@@ -116,7 +116,7 @@ export default function ProblemSet2() {
     const pct = score / total;
     const allCatsCovered = Object.values(catStats).every(count => count >= 1);
 
-    if (score === 8) {
+    if (score === total) {
       level = "Mastered";
     } else if (pct > 0.8 && allCatsCovered) {
       level = "Proficient";
@@ -131,12 +131,24 @@ export default function ProblemSet2() {
     window.scrollTo(0, 0);
   };
 
+  // Helper to determine styles for result cards
+  const getResultStyles = (level) => {
+    if (level === "Mastered" || level === "Proficient") {
+      return { bg: "rgba(0, 255, 136, 0.1)", border: "#00ff88" };
+    } else if (level === "Developing") {
+      return { bg: "rgba(255, 213, 0, 0.1)", border: "#ffd500" };
+    } else {
+      return { bg: "rgba(255, 77, 77, 0.1)", border: "#ff4d4d" };
+    }
+  };
+
   // --- RENDER ---
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "#007bff" }}>
+      <Link to="/" style={{ display: "inline-block", marginBottom: "20px", textDecoration: "none", color: "var(--accent-primary)" }}>
         &larr; Back to Menu
       </Link>
+      
       {/* HEADER & CONTROLS */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2>🧪 Solutions & Dilutions</h2>
@@ -144,9 +156,9 @@ export default function ProblemSet2() {
           <button 
             onClick={() => setMode("practice")}
             style={{ 
-              padding: "8px 15px", marginRight: "5px", border: "none", borderRadius: "4px", cursor: "pointer",
-              background: mode === "practice" ? "#007bff" : "#e0e0e0", 
-              color: mode === "practice" ? "white" : "black" 
+              padding: "8px 15px", marginRight: "5px", border: "1px solid var(--accent-primary)", borderRadius: "4px", cursor: "pointer",
+              background: mode === "practice" ? "var(--accent-primary)" : "transparent", 
+              color: mode === "practice" ? "#0a0e27" : "var(--accent-primary)", fontWeight: "bold"
             }}
           >
             Practice
@@ -154,9 +166,9 @@ export default function ProblemSet2() {
           <button 
             onClick={() => setMode("quiz")}
             style={{ 
-              padding: "8px 15px", border: "none", borderRadius: "4px", cursor: "pointer",
-              background: mode === "quiz" ? "#007bff" : "#e0e0e0", 
-              color: mode === "quiz" ? "white" : "black" 
+              padding: "8px 15px", border: "1px solid var(--accent-primary)", borderRadius: "4px", cursor: "pointer",
+              background: mode === "quiz" ? "var(--accent-primary)" : "transparent", 
+              color: mode === "quiz" ? "#0a0e27" : "var(--accent-primary)", fontWeight: "bold"
             }}
           >
             Quiz Mode
@@ -164,7 +176,7 @@ export default function ProblemSet2() {
         </div>
       </div>
 
-      <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
+      <div style={{ background: "var(--bg-secondary)", border: "1px solid rgba(0,217,255,0.1)", padding: "15px", borderRadius: "8px", marginBottom: "20px" }}>
         <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
           <div>
             <label><strong>Seed: </strong></label>
@@ -174,7 +186,7 @@ export default function ProblemSet2() {
               onChange={(e) => setSeed(e.target.value)}
               style={{ padding: "5px", width: "100px" }}
             />
-            <button onClick={() => setSeed(Math.floor(Math.random() * 10000).toString())} style={{ marginLeft: "10px" }}>
+            <button onClick={() => setSeed(Math.floor(Math.random() * 10000).toString())} style={{ marginLeft: "10px", background: "var(--accent-secondary)", border: "none", color: "white", padding: "6px 12px", borderRadius: "4px" }}>
               Randomize
             </button>
           </div>
@@ -188,24 +200,25 @@ export default function ProblemSet2() {
             </div>
           )}
         </div>
-        <p style={{ fontSize: "0.9em", color: "#666", marginTop: "10px" }}>
+        <p style={{ fontSize: "0.9em", color: "var(--text-secondary)", marginTop: "10px" }}>
           {mode === "practice" 
             ? "Practice specific concepts. Switch topics to focus your study." 
-            : "Generate a fixed set of 8 problems (2 of each type) to evaluate your level."}
+            : "Generate a fixed set of 10 problems (2 of each type) to evaluate your level."}
             
         </p>
-        <p style={{ fontSize: "0.9em", color: "#666", marginTop: "10px" }}>
-          This tool does not handle significant figures. Report all of your answers to 3 sig figs.
+        <p style={{ fontSize: "0.9em", color: "var(--text-secondary)", marginTop: "10px", fontStyle: "italic" }}>
+          Note: This tool does not handle significant figures grading. Report all of your answers to 3 decimal places to be safe.
         </p>
       </div>
 
       {/* --- QUIZ RESULT CARD --- */}
       {mode === "quiz" && quizResult && (
         <div style={{ 
-          background: quizResult.level === "Mastered" ? "#d4edda" : quizResult.level === "Deficient" ? "#f8d7da" : "#fff3cd", 
-          padding: "20px", borderRadius: "8px", marginBottom: "30px", border: "1px solid #ddd"
+          background: getResultStyles(quizResult.level).bg,
+          border: `1px solid ${getResultStyles(quizResult.level).border}`,
+          padding: "20px", borderRadius: "8px", marginBottom: "30px"
         }}>
-          <h2 style={{ marginTop: 0 }}>Evaluation: {quizResult.level}</h2>
+          <h2 style={{ marginTop: 0, color: getResultStyles(quizResult.level).border }}>Evaluation: {quizResult.level}</h2>
           <p style={{ fontSize: "1.2em" }}>
             Score: {quizResult.score} / {quizResult.total} ({Math.round((quizResult.score/quizResult.total)*100)}%)
           </p>
@@ -217,7 +230,7 @@ export default function ProblemSet2() {
           </p>
           <button 
             onClick={() => setQuizResult(null)} 
-            style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer" }}
+            style={{ padding: "5px 10px", marginTop: "10px", cursor: "pointer", background: "var(--bg-secondary)", border: "1px solid var(--text-primary)", color: "var(--text-primary)" }}
           >
             Hide Results / Retake
           </button>
@@ -227,8 +240,8 @@ export default function ProblemSet2() {
       {/* --- PRACTICE MODE VIEW --- */}
       {mode === "practice" && practiceProblem && (
         <div>
-          <div style={{ marginBottom: "20px" }}>
-            <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
+          <div className="problem-card" style={{ marginBottom: "20px" }}>
+            <span style={{ fontSize: "0.8em", textTransform: "uppercase", color: "var(--accent-secondary)", letterSpacing: "1px" }}>
               {TOPICS.find(t => t.id === practiceTopic).name}
             </span>
             <p style={{ fontSize: "1.2em", margin: "10px 0 20px 0" }}>{renderText(practiceProblem.parts)}</p>
@@ -246,16 +259,26 @@ export default function ProblemSet2() {
             
             <button 
               onClick={checkPractice}
-              style={{ marginTop: "15px", padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+              style={{ marginTop: "15px", padding: "10px 20px", background: "var(--accent-primary)", color: "#0a0e27", fontWeight: "bold", border: "none", borderRadius: "4px", cursor: "pointer" }}
             >
               Check Answer
             </button>
 
             {practiceFeedback && (
-              <div style={{ marginTop: "20px", padding: "10px", background: practiceFeedback.includes("Correct") ? "#d4edda" : "#f8d7da", borderRadius: "5px" }}>
-                <strong>{practiceFeedback}</strong>
+              <div style={{ 
+                marginTop: "20px", 
+                padding: "15px", 
+                borderRadius: "8px", 
+                background: practiceFeedback.includes("Correct") ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 77, 77, 0.1)",
+                border: `1px solid ${practiceFeedback.includes("Correct") ? "#00ff88" : "#ff4d4d"}`
+              }}>
+                <strong style={{ color: practiceFeedback.includes("Correct") ? "#00ff88" : "#ff4d4d", fontSize: "1.1em" }}>
+                  {practiceFeedback}
+                </strong>
                 {!practiceFeedback.includes("Correct") && (
-                  <div style={{ fontSize: "0.9em", marginTop: "5px" }}>Hint: {renderText(practiceProblem.hintParts)}</div>
+                  <div style={{ fontSize: "0.9em", marginTop: "10px", color: "var(--text-secondary)" }}>
+                    Hint: {renderText(practiceProblem.hintParts)}
+                  </div>
                 )}
               </div>
             )}
@@ -269,11 +292,24 @@ export default function ProblemSet2() {
           {quizProblems.map((p, idx) => {
             // If we have results, show feedback inline
             const res = quizResult ? quizResult.details[idx] : null;
-            const bg = res ? (res.isCorrect ? "#d4edda33" : "#f8d7da33") : "transparent";
+            
+            // Define background colors for quiz items
+            let bg = "var(--bg-secondary)";
+            let border = "rgba(0,217,255,0.1)";
+            
+            if (res) {
+                if (res.isCorrect) {
+                    bg = "rgba(0, 255, 136, 0.05)";
+                    border = "#00ff88";
+                } else {
+                    bg = "rgba(255, 77, 77, 0.05)";
+                    border = "#ff4d4d";
+                }
+            }
 
             return (
-              <div key={p.id} style={{ marginBottom: "30px", padding: "15px", border: "1px solid #eee", borderRadius: "8px", background: bg }}>
-                <div style={{ fontSize: "0.8em", color: "#888", marginBottom: "5px" }}>
+              <div key={p.id} style={{ marginBottom: "30px", padding: "20px", border: `1px solid ${border}`, borderRadius: "12px", background: bg, boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
+                <div style={{ fontSize: "0.8em", color: "var(--accent-secondary)", marginBottom: "5px" }}>
                   Problem {idx + 1}: {TOPICS.find(t => t.id === p.category).name}
                 </div>
                 <div style={{ marginBottom: "15px" }}>{renderText(p.parts)}</div>
@@ -284,18 +320,18 @@ export default function ProblemSet2() {
                     disabled={!!quizResult} // Lock input after submit
                     value={quizAnswers[p.id] || ""}
                     onChange={(e) => setQuizAnswers({ ...quizAnswers, [p.id]: e.target.value })}
-                    style={{ padding: "8px", width: "120px", borderColor: res && !res.isCorrect ? "red" : "#ccc" }}
+                    style={{ padding: "8px", width: "120px", borderColor: res && !res.isCorrect ? "#ff4d4d" : "var(--accent-secondary)" }}
                   />
                   <strong>{p.unit}</strong>
                   {res && (
-                    <span style={{ marginLeft: "10px", color: res.isCorrect ? "green" : "red", fontWeight: "bold" }}>
+                    <span style={{ marginLeft: "10px", color: res.isCorrect ? "#00ff88" : "#ff4d4d", fontWeight: "bold" }}>
                       {res.isCorrect ? "✅" : `❌ (Ans: ${p.answer})`}
                     </span>
                   )}
                 </div>
                 {/* Show hint only if incorrect after grading */}
                 {res && !res.isCorrect && (
-                  <div style={{ marginTop: "10px", fontSize: "0.9em", color: "#666" }}>
+                  <div style={{ marginTop: "10px", fontSize: "0.9em", color: "var(--text-secondary)" }}>
                     Hint: {renderText(p.hintParts)}
                   </div>
                 )}
@@ -307,8 +343,9 @@ export default function ProblemSet2() {
              <button 
              onClick={submitQuiz}
              style={{ 
-               width: "100%", padding: "15px", background: "#28a745", color: "white", 
-               fontSize: "1.1em", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "20px" 
+               width: "100%", padding: "15px", background: "#00ff88", color: "#0a0e27", fontWeight: "bold", 
+               fontSize: "1.1em", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "20px",
+               boxShadow: "0 0 15px rgba(0, 255, 136, 0.4)"
              }}
            >
              Submit Quiz for Evaluation
