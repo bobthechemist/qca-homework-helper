@@ -13,26 +13,23 @@ export default function Meniscus({ volume, min, max, glassType = 'cylinder' }) {
     const pct = (val - min) / range;
     
     if (glassType === 'buret') {
-      // Buret: Min value (e.g. 0) is at Top (0px)
-      // Max value (e.g. 50) is at Bottom (300px)
+      // Buret: Min (0) at Top, Max (50) at Bottom
       return pct * height;
     } else {
-      // Cylinder: Min value (e.g. 0) is at Bottom (300px)
-      // Max value is at Top (0px)
+      // Cylinder: Min (0) at Bottom, Max (50) at Top
       return height - (pct * height);
     }
   };
 
   // Generate Tick Marks
   const ticks = [];
-  // Loop from min to max with 0.1 increments
-  // Using Math.round to fix floating point loop errors
   for (let i = 0; i <= range * 10; i++) {
     const v = min + (i / 10);
     const y = scaleY(v);
     
-    const isMajor = i % 10 === 0; // x.0
-    const isMiddle = i % 10 === 5; // x.5
+    // Floating point math fix for loop
+    const isMajor = Math.abs(i % 10) < 0.001; 
+    const isMiddle = Math.abs(i % 10 - 5) < 0.001;
     
     let length = 10; 
     if (isMajor) length = 25; 
@@ -50,8 +47,16 @@ export default function Meniscus({ volume, min, max, glassType = 'cylinder' }) {
     );
   }
 
-  const liquidY = scaleY(volume);
-  const meniscusDepth = 8; 
+  // --- MENISCUS GEOMETRY FIX ---
+  // A quadratic bezier curve (Q) goes from Start to End, pulled towards a Control Point.
+  // The curve passes through the midpoint of the Control Point depth.
+  // We want the BOTTOM of the curve to match scaleY(volume).
+  
+  const meniscusDepth = 10; // Total pixel height of the curve
+  const curveBottomOffset = meniscusDepth / 2; // The visual bottom of a symmetric Q curve
+  
+  // We shift the "water level" UP (negative Y) so that the dip hits the target line
+  const liquidY = scaleY(volume) - curveBottomOffset;
 
   return (
     <div style={{ border: "1px solid #ccc", display: "inline-block", padding: "10px", background: "white" }}>
@@ -65,7 +70,6 @@ export default function Meniscus({ volume, min, max, glassType = 'cylinder' }) {
         </defs>
 
         {/* Liquid Rectangle */}
-        {/* Logic differs by glassware type because the "bottom" of the SVG is always y=300 */}
         <rect 
           x="0" 
           y={liquidY} 
@@ -75,6 +79,12 @@ export default function Meniscus({ volume, min, max, glassType = 'cylinder' }) {
         />
         
         {/* Meniscus Curve (White scoop) */}
+        {/* 
+           M 0,Y           -> Start at left wall, water level
+           Q 50,Y+Depth    -> Pull down towards center (creates the curve)
+           100,Y           -> End at right wall
+           L ...           -> Close the shape upwards to fill the gap
+        */}
         <path 
           d={`M 0,${liquidY} Q 50,${liquidY + meniscusDepth} 100,${liquidY} L 100,${liquidY-20} L 0,${liquidY-20} Z`} 
           fill="white" 
@@ -86,6 +96,9 @@ export default function Meniscus({ volume, min, max, glassType = 'cylinder' }) {
 
         {/* Ticks */}
         {ticks}
+        
+        {/* OPTIONAL DEBUG: Uncomment this to see a red line where the answer actually is */}
+        {/* <line x1="0" y1={scaleY(volume)} x2="100" y2={scaleY(volume)} stroke="red" strokeWidth="0.5" opacity="0.5" /> */}
       </svg>
     </div>
   );

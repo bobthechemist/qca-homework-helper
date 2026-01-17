@@ -155,6 +155,8 @@ export const genMeniscus = (seed) => {
     answer: visualVol,
     unit: "mL",
     checkSigFigs: 2,
+    toleranceType: 'absolute', // Math check: Must be within absolute range
+    tolerance: 0.02,           // The Range: +/- 0.02 mL
     hintParts: [
       isBuret 
         ? "For a Buret, numbers increase going DOWN. Be careful not to read it backwards." 
